@@ -1,0 +1,47 @@
+(.venv) alex@MSI:~/Working_directories/PROJECTS/PROJECT_05/dev-DevOps-4091/Exercice_1/ansible$ . cmd_check-nginx-restart.sh
+[WARNING]: Host 'my-vm' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+my-vm | CHANGED | rc=0 >>
+    PID USER                      STARTED     ELAPSED CMD
+   4771 root     Thu Nov  5 15:58:53 2026       02:01 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+   4772 www-data Thu Nov  5 15:58:53 2026       02:01 nginx: worker process
+   4773 www-data Thu Nov  5 15:58:53 2026       02:01 nginx: worker process
+(.venv) alex@MSI:~/Working_directories/PROJECTS/PROJECT_05/dev-DevOps-4091/Exercice_1/ansible$ vi nginx/app.conf
+(.venv) alex@MSI:~/Working_directories/PROJECTS/PROJECT_05/dev-DevOps-4091/Exercice_1/ansible$ ansible-playbook -i hosts_aws deploy.yml
+
+PLAY [Openclassrooms P5 EDO deployment] *********************************************************************************************************************************************************
+
+TASK [Gathering Facts] **************************************************************************************************************************************************************************
+[WARNING]: Host 'my-vm' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+ok: [my-vm]
+
+TASK [Installer Nginx] **************************************************************************************************************************************************************************
+ok: [my-vm]
+
+TASK [Copier l'application Angular dans /var/www/html] ******************************************************************************************************************************************
+ok: [my-vm]
+
+TASK [Copier la configuration du site] **********************************************************************************************************************************************************
+changed: [my-vm]
+
+TASK [Activer le site (lien symbolique dans sites-enabled)] *************************************************************************************************************************************
+ok: [my-vm]
+
+TASK [Désactiver le site par défaut] ************************************************************************************************************************************************************
+ok: [my-vm]
+
+TASK [S'assurer que Nginx est démarré et activé au boot] ****************************************************************************************************************************************
+ok: [my-vm]
+
+RUNNING HANDLER [Redémarrer Nginx] **************************************************************************************************************************************************************
+changed: [my-vm]
+
+PLAY RECAP **************************************************************************************************************************************************************************************
+my-vm                      : ok=8    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+(.venv) alex@MSI:~/Working_directories/PROJECTS/PROJECT_05/dev-DevOps-4091/Exercice_1/ansible$ . cmd_check-nginx-restart.sh
+[WARNING]: Host 'my-vm' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+my-vm | CHANGED | rc=0 >>
+    PID USER                      STARTED     ELAPSED CMD
+   5538 root     Thu Nov  5 16:01:51 2026       00:40 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+   5539 www-data Thu Nov  5 16:01:51 2026       00:40 nginx: worker process
+   5540 www-data Thu Nov  5 16:01:51 2026       00:40 nginx: worker process

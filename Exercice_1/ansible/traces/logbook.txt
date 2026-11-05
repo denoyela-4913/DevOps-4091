@@ -1,0 +1,22 @@
+# Docker
+# 1. Vérifier que le conteneur tourne (ports 2222->22 et 8006)
+docker ps
+
+# 2. Tester l'accès SSH sans mot de passe (échec attendu : Permission denied)
+ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new \
+    openclassrooms@127.0.0.1 -p 2222 true
+
+# 3. Copier la clé publique sur la VM (mot de passe par défaut : openclassrooms)
+sshpass -p openclassrooms ssh-copy-id -o StrictHostKeyChecking=accept-new \
+    -p 2222 openclassrooms@127.0.0.1
+
+
+# AWS
+# 1. Récupérer le DNS public et l'IP de l'instance depuis l'état Terraform
+cd Exercice_1/terraform/aws
+terraform show -json | python3 -c "import json,sys; d=json.load(sys.stdin); [print(r['values']['public_dns'], r['values']['public_ip'], r['values']['instance_state']) for r in d['values']['root_module']['resources'] if r['type']=='aws_instance']"
+# Équivalent plus simple : terraform show | grep public_dns
+
+# 2. Vérifier que la clé privée générée par Terraform existe, avec les droits 600
+ls -l ~/.ssh/aws_openclassrooms_edo_p5.pem
+

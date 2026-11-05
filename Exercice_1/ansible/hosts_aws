@@ -1,2 +1,4 @@
+# Inventaire Ansible - option AWS (instance EC2 Ubuntu, eu-north-1)
+# Le DNS public change si l'instance est recréée : voir `terraform show` (attribut public_dns) dans terraform/aws.
 [all]
-<addresse_ip_instance_aws> ansible_ssh_user=ubuntu
+my-vm ansible_host=ec2-13-48-248-203.eu-north-1.compute.amazonaws.com ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/aws_openclassrooms_edo_p5.pem ansible_ssh_common_args='-o StrictHostKeyChecking=accept-new'

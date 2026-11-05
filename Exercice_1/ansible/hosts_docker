@@ -1,2 +1,4 @@
+# Inventaire Ansible - option Docker (VM QEMU dans un conteneur)
+# Le port 22 de la VM est publié sur le port 2222 de l'hôte.
 [all]
-127.0.0.1 ansible_ssh_user=openclassrooms ansible_ssh_port=2222
+my-vm ansible_host=127.0.0.1 ansible_port=2222 ansible_user=openclassrooms

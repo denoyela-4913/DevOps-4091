@@ -1,0 +1,4 @@
+docker start openclassrooms-p5-edo
+echo "attendre « Ubuntu 24.04 LTS openclassrooms ttyS0 »"
+read -t 3
+docker logs -f openclassrooms-p5-edo    # attendre « Ubuntu 24.04 LTS openclassrooms ttyS0 »

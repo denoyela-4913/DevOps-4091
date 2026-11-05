@@ -1,13 +1,58 @@
 ---
 - name: Openclassrooms P5 EDO deployment
   hosts: all
+  become: true # les tâches nécessitent les droits root (sudo)
 
   tasks:
-    # Implémenter ici les tâches:
-    # - d'installation de Nginx;
-    # - d'installation de l'application Angular (voir répertoire ./app);
-    # - de configuration du serveur Nginx pour servir l'application Angular
+    # 1. Installation de Nginx
+    - name: Installer Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+
+    # 2. Installation de l'application Angular (fichiers statiques déjà compilés)
+    - name: Copier l'application Angular dans /var/www/html
+      ansible.builtin.copy:
+        src: app/olympic-games-starter
+        dest: /var/www/html/
+        owner: www-data
+        group: www-data
+        mode: preserve
+
+    # 3. Configuration de Nginx pour servir l'application
+    - name: Copier la configuration du site
+      ansible.builtin.copy:
+        src: nginx/app.conf
+        dest: /etc/nginx/sites-available/app.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Redémarrer Nginx
+
+    - name: Activer le site (lien symbolique dans sites-enabled)
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/app.conf
+        dest: /etc/nginx/sites-enabled/app.conf
+        state: link
+      notify: Redémarrer Nginx
+
+    # Le site "default" d'Ubuntu écoute aussi sur le port 80 en default_server : conflit
+    - name: Désactiver le site par défaut
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Redémarrer Nginx
+
+    - name: S'assurer que Nginx est démarré et activé au boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
 
   handlers:
-    # Implémenter ici le handler redémarrant automatiquement le serveur Nginx lorsque le playbook
-    # opère une modification de la configuration du serveur.
+    # Exécuté une seule fois, en fin de play, si une tâche ci-dessus a modifié la configuration
+    - name: Redémarrer Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted

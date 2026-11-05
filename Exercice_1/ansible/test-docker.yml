@@ -1,0 +1,68 @@
+---
+# Vérifie le déploiement de deploy.yml sur la VM (lecture seule, ne modifie rien)
+# Usage : ansible-playbook -i hosts_docker test-docker.yml
+- name: Vérifier le déploiement Nginx + application Angular
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Valider la syntaxe de la configuration Nginx
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Vérifier que le service Nginx est démarré et activé au boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Vérifier que le site de l'application est activé
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/app.conf
+      register: site_app
+      failed_when: not site_app.stat.exists
+
+    - name: Vérifier que le site par défaut est désactivé
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/default
+      register: site_default
+      failed_when: site_default.stat.exists
+
+    - name: Vérifier la présence de index.html
+      ansible.builtin.stat:
+        path: /var/www/html/olympic-games-starter/index.html
+      register: index_html
+      failed_when: not index_html.stat.exists
+
+    - name: Vérifier que le port 80 est ouvert
+      ansible.builtin.wait_for:
+        port: 80
+        timeout: 5
+
+    - name: Vérifier que le site répond en 200 (depuis la VM)
+      ansible.builtin.uri:
+        url: http://localhost
+        status_code: 200
+        return_content: true
+      register: http_result
+
+    - name: Vérifier que la page est bien l'application Angular
+      ansible.builtin.assert:
+        that: "'<app-root' in http_result.content"
+        fail_msg: "La page servie ne contient pas <app-root> : ce n'est pas l'application Angular"
+        success_msg: Application Angular servie correctement
+
+# Test depuis l'hôte, via le port 80 redirigé par Docker
+- name: Vérifier l'accès depuis la machine locale
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Requête sur http://localhost (redirection de port Docker)
+      ansible.builtin.uri:
+        url: http://localhost
+        status_code: 200

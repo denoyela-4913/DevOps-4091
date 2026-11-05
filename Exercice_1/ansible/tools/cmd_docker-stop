@@ -1,0 +1,1 @@
+docker stop openclassrooms-p5-edo && docker ps -a --filter name=openclassrooms-p5-edo --format '{{.Names}} {{.Status}}'
