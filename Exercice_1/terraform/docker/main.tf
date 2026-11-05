@@ -2,7 +2,8 @@ terraform {
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "3.0.2"
+      #version = "3.0.2"
+      version = "~>4.2.0"
     }
   }
 }
@@ -11,7 +12,8 @@ provider "docker" {}
 
 
 resource "docker_image" "qemu" {
-  name = "qemux/qemu-docker:5.16"
+  #name = "qemux/qemu-docker:5.16"
+  name = "qemux/qemu:latest"
 }
 
 resource "docker_volume" "qemu_storage" {

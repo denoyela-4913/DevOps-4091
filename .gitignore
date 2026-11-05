@@ -1,3 +1,5 @@
 /.ansible
 .terraform*
 *.tfstate*
+Exercice_*/*/tfplan
+Exercice_*/*/*/tfplan

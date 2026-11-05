@@ -8,7 +8,8 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  #region = "us-east-1"
+  region = "eu-north-1"
 }
 
 resource "aws_opensearch_domain" "openclassrooms-p8" {

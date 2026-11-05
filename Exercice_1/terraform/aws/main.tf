@@ -18,7 +18,7 @@ terraform {
 provider "aws" {
   # Définition de la "région" ciblée par le déploiement
   # Voir https://aws.amazon.com/fr/about-aws/global-infrastructure/
-  region = "us-east-1"
+  region = "eu-north-1"
 }
 
 # Définit d'une ressource de type
@@ -28,7 +28,7 @@ resource "aws_instance" "my_server" {
   # Définition de l'AMI (identifiant du modèle d'image disque)
   # et du type d'instance (i.e. caractéristiques de performance)
   # de la machine virtuelle à créer
-  ami           = "ami-04a81a99f5ec58529"
+  ami           = "ami-06fb1802e2b757f09" # Ubuntu 24.04 LTS, eu-north-1
   instance_type = "t3.micro"
 
   # Définition des étiquettes à associer à la machine
@@ -56,6 +56,15 @@ resource "aws_security_group" "my_security_group" {
     ]
     from_port = 22
     to_port   = 22
+    protocol  = "tcp"
+  }
+  // Port 80 (HTTP) : nécessaire pour accéder au site servi par Nginx
+  ingress {
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+    from_port = 80
+    to_port   = 80
     protocol  = "tcp"
   }
   egress {
@@ -95,4 +104,14 @@ resource "local_sensitive_file" "pem_file" {
   content = tls_private_key.my_ssh_key.private_key_pem
   # Attention, sur MacOS il est possible qu'il soit nécessaire de modifier la ligne précédente par:
   # content              = tls_private_key.my_ssh_key.private_key_openssh
+}
+
+// Nom d'hôte public de la VM, à copier dans l'inventaire Ansible (hosts_aws)
+output "public_dns" {
+  value = aws_instance.my_server.public_dns
+}
+
+// Adresse IP publique de la VM
+output "public_ip" {
+  value = aws_instance.my_server.public_ip
 }
