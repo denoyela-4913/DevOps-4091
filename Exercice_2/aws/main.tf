@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "aws" {
-  #region = "us-east-1"
+  ##region = "us-east-1"
   region = "eu-north-1"
 }
 
@@ -24,6 +24,17 @@ resource "aws_opensearch_domain" "openclassrooms-p8" {
     ebs_enabled = true
     volume_size = 10
   }
+
+  access_policies = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { AWS = "*" }
+      Action    = "es:*"
+      Resource  = "arn:aws:es:eu-north-1:*:domain/openclassrooms-p5-edo/*"
+      Condition = { IpAddress = { "aws:SourceIp" = "88.160.138.154/32" } }
+    }]
+  })
 
   tags = {
     Domain = "OpenClassrooms_P5_EDO"

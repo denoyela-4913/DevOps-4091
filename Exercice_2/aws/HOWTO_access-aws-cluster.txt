@@ -1,0 +1,2 @@
+# ajoute l'access au cluster
+aws opensearch list-domain-names --region eu-north-1

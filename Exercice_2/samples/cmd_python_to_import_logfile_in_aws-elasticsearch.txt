@@ -1,0 +1,31 @@
+python3 - <<'EOF'
+import re, json, urllib.request
+from datetime import datetime
+
+ES = "https://search-openclassrooms-p5-edo-q74ell5vx6pesezvjhjyha3pay.eu-north-1.es.amazonaws.com"
+INDEX = "nginx-access"
+rx = re.compile(r'(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (\S+) [^"]*" (\d{3}) (\d+|-) "([^"]*)" "([^"]*)"')
+
+def send(lines):
+    req = urllib.request.Request(ES + "/_bulk", data="".join(lines).encode(),
+        headers={"Content-Type": "application/x-ndjson"}, method="POST")
+    r = json.load(urllib.request.urlopen(req))
+    return r["errors"]
+
+batch, n, bad, errs = [], 0, 0, False
+for line in open("nginx-access.log", encoding="utf-8", errors="replace"):
+    m = rx.match(line)
+    if not m:
+        bad += 1
+        continue
+    ip, ts, method, url, status, size, ref, ua = m.groups()
+    doc = {"@timestamp": datetime.strptime(ts, "%d/%b/%Y:%H:%M:%S %z").isoformat(),
+           "clientip": ip, "method": method, "url": url, "status": int(status),
+           "bytes": 0 if size == "-" else int(size), "referrer": ref, "agent": ua}
+    batch += [json.dumps({"index": {"_index": INDEX}}) + "\n", json.dumps(doc) + "\n"]
+    n += 1
+    if n % 2000 == 0:
+        errs |= send(batch); batch = []
+if batch: errs |= send(batch)
+print(f"{n} documents envoyés, {bad} lignes non parsées, erreurs: {errs}")
+EOF
