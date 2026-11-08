@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.16"
+      source = "hashicorp/aws"
+      version = "~> 5.0"
     }
   }
 
@@ -10,12 +10,12 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "eu-north-1"
 }
 
 resource "aws_instance" "webserver" {
   count         = 2
-  ami           = "ami-04a81a99f5ec58529"
+  ami           = "ami-06fb1802e2b757f09"
   instance_type = "t3.micro"
   tags = {
     Name = "OpenClassrooms-P5-Webserver-${count.index}"
@@ -34,7 +34,7 @@ resource "aws_instance" "webserver" {
 }
 
 resource "aws_instance" "haproxy" {
-  ami           = "ami-04a81a99f5ec58529"
+  ami           = "ami-06fb1802e2b757f09"
   instance_type = "t3.micro"
   tags = {
     Name = "OpenClassrooms-P5-HAProxy"
@@ -47,10 +47,22 @@ resource "aws_instance" "haproxy" {
     private_key = tls_private_key.my_ssh_key.private_key_pem
     host        = self.public_ip
   }
+  # Config HAProxy générée depuis le template : les IP des webservers sont injectées par Terraform
+  provisioner "file" {
+    content = templatefile("${path.module}/haproxy.cfg.tpl", {
+      web1 = aws_instance.webserver[0].private_ip
+      web2 = aws_instance.webserver[1].private_ip
+    })
+    destination = "/tmp/haproxy.cfg"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo apt-get update -y",
       "sudo apt-get install -y haproxy",
+      "sudo cp /tmp/haproxy.cfg /etc/haproxy/haproxy.cfg",
+      "sudo haproxy -c -f /etc/haproxy/haproxy.cfg",
+      "sudo systemctl restart haproxy",
     ]
   }
 }

@@ -1,0 +1,1 @@
+Réseau instable (anti-flapping, v2) : inter 3s, fall 4, rise 4, downinter 5s ; l'utilisateur est protégé par timeout connect 1s + retries 3 + redispatch.

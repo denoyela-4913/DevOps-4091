@@ -1,0 +1,1 @@
+Config de départ : tests de santé par défaut (inter 2s, fall 3), timeout connect 5s, sans redispatch.

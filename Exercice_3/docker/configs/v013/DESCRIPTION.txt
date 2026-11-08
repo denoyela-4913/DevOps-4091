@@ -1,0 +1,1 @@
+Comme v006 mais balance roundrobin (sans leastconn) : isole l'effet de leastconn.

@@ -1,0 +1,1 @@
+Application avec sessions : persistance par cookie (cookie SRV insert indirect nocache) + redispatch, détection réactive comme v002.

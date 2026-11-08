@@ -1,0 +1,1 @@
+Ultra-réactive + check-reuse-pool (3.2+) : tests de santé sur connexions du pool.

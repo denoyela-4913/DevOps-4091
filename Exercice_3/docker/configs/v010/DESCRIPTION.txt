@@ -1,0 +1,1 @@
+Ultra-réactive + init-state down (3.1+) : serveur utilisé seulement après ses tests de santé.

@@ -1,0 +1,1 @@
+Vérification légère : http-check send meth HEAD, inter 3s, fastinter 500ms, downinter 5s, fall 2, rise 2 (peu de charge, confirmation rapide).

@@ -1,0 +1,1 @@
+aws ec2 describe-images --region eu-north-1 --owners 099720109477 --filters "Name=name,Values=ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*" --query 'sort_by(Images,&CreationDate)[-1].[ImageId,Name]' --output text

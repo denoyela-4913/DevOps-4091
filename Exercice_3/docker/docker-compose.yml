@@ -6,7 +6,7 @@ services:
     image: nginxdemos/hello
 
   haproxy:
-    image: haproxy:2.3
+    image: haproxy:${HAPROXY_VERSION:-2.3}
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
     ports:
