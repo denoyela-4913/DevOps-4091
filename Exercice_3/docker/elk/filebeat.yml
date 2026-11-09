@@ -1,0 +1,70 @@
+# Filebeat 7.14 : reçoit en UDP (syslog) les logs de HAProxy et des webservers, les analyse et les envoie à Elasticsearch.
+# Le démon Docker (pilote syslog, voir docker-compose.elk.yml) ajoute le nom du conteneur dans le champ process.program.
+
+filebeat.inputs:
+  - type: syslog
+    format: rfc3164
+    protocol.udp:
+      host: "0.0.0.0:5140"
+
+processors:
+  # Source du log d'après le nom du conteneur : haproxy ou webserver
+  - add_fields:
+      when.contains: {process.program: haproxy}
+      target: ""
+      fields: {app: haproxy}
+  - add_fields:
+      when.contains: {process.program: webserver}
+      target: ""
+      fields: {app: webserver}
+
+  # HAProxy : ligne « option httplog ». Exemple :
+  # 172.19.0.1:44352 [09/Nov/2026:11:20:00.123] http_in webservers/webserver1 0/0/0/1/1 200 1234 - - ---- 1/1/0/0/0 0/0 "GET / HTTP/1.1"
+  - dissect:
+      when.equals: {app: haproxy}
+      tokenizer: '%{client_ip}:%{client_port} [%{accept_date}] %{frontend} %{backend}/%{server} %{t_wait_queue_client}/%{t_queue}/%{t_connect}/%{t_response}/%{t_total} %{status_code} %{bytes_read} %{cap_req} %{cap_res} %{termination_state} %{conn_active}/%{conn_frontend}/%{conn_backend}/%{conn_server}/%{retries} %{srv_queue}/%{be_queue} "%{http_request}"'
+      field: message
+      target_prefix: haproxy
+      ignore_failure: true              # lignes sans requête (ex. « Server … is DOWN ») : gardées telles quelles
+  - convert:
+      fields:
+        - {from: haproxy.status_code, type: integer}
+        - {from: haproxy.bytes_read, type: long}
+        - {from: haproxy.t_wait_queue_client, type: integer}
+        - {from: haproxy.t_queue, type: integer}
+        - {from: haproxy.t_connect, type: integer}
+        - {from: haproxy.t_response, type: integer}
+        - {from: haproxy.t_total, type: integer}
+        - {from: haproxy.conn_active, type: integer}
+        - {from: haproxy.conn_backend, type: integer}
+        - {from: haproxy.retries, type: integer}
+        - {from: haproxy.srv_queue, type: integer}
+        - {from: haproxy.be_queue, type: integer}
+      ignore_missing: true
+      fail_on_error: false
+
+  # nginx (webservers), format « combined ». Exemple :
+  # 172.19.0.4 - - [09/Nov/2026:10:20:00 +0000] "GET / HTTP/1.1" 200 7234 "-" "curl/8" "-"
+  - dissect:
+      when.equals: {app: webserver}
+      tokenizer: '%{client_ip} - - [%{time}] "%{http_request}" %{status_code} %{bytes_sent} "%{referer}" "%{user_agent}" "%{xff}"'
+      field: message
+      target_prefix: nginx
+      ignore_failure: true
+  - convert:
+      fields:
+        - {from: nginx.status_code, type: integer}
+        - {from: nginx.bytes_sent, type: long}
+      ignore_missing: true
+      fail_on_error: false
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]  # nom du conteneur, joignable car Filebeat est aussi sur le réseau docker_elk
+  index: "exo3-logs-%{+yyyy.MM.dd}"     # un index par jour
+
+# Index personnalisé : désactiver la gestion automatique ILM et nommer le modèle
+setup.ilm.enabled: false
+setup.template.name: "exo3-logs"
+setup.template.pattern: "exo3-logs-*"
+
+logging.level: info

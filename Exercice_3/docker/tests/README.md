@@ -114,3 +114,15 @@ tests/mon-table.sh 3.4      # tableau comparatif charge x config avec les indica
 - Un seul scénario : un serveur arrêté. Un serveur lent, qui renvoie des erreurs 500, ou un réseau qui flappe n'est pas simulé : l'intérêt de v003 n'est donc pas mesuré.
 - Le serveur arrêté ne refuse pas la connexion, elle reste sans réponse : cela favorise les configs à `timeout connect` court.
 - Les durées varient de quelques dixièmes de seconde d'un run à l'autre : d'où les moyennes.
+
+## Logs vers ELK (Filebeat)
+
+`docker-compose.elk.yml` (surcharge) envoie les logs de HAProxy et des webservers vers Elasticsearch via Filebeat, avec le pilote de logs syslog de Docker (sous Docker Desktop, les fichiers de logs ne sont pas lisibles depuis un conteneur). La config principale `haproxy.cfg` journalise une ligne par requête (`option httplog`) ; `elk/filebeat.yml` en extrait les champs (`haproxy.status_code`, `haproxy.server`, `haproxy.t_response`...). Index : `exo3-logs-AAAA.MM.JJ`, champ `app` = `haproxy` ou `webserver`.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.elk.yml up -d --force-recreate   # démarrer
+tests/elk-demo.sh                                  # petit run : 20 req/s pendant 40 s, panne de webserver1 de 10 s à 25 s
+docker compose up -d --force-recreate haproxy webserver1 webserver2                         # revenir à la normale
+```
+
+Les campagnes de test (`run-all-tests.sh`) n'utilisent pas cette surcharge et n'envoient rien à ELK.

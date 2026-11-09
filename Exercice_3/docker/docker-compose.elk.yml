@@ -1,0 +1,36 @@
+# Surcharge à ajouter pour envoyer les logs vers la stack ELK (Elasticsearch/Kibana, réseau docker_elk).
+#
+#   Démarrer : docker compose -f docker-compose.yml -f docker-compose.elk.yml up -d --force-recreate
+#   Arrêter  : docker compose stop filebeat ; docker compose up -d --force-recreate haproxy webserver1 webserver2
+#
+# Pourquoi syslog : sous Docker Desktop les fichiers de logs des conteneurs ne sont pas lisibles depuis un autre
+# conteneur. Le pilote de logs « syslog » du démon envoie donc chaque ligne en UDP vers Filebeat (port publié 5140).
+# Les tests (run-all-tests.sh) utilisent seulement docker-compose.yml : leurs conteneurs n'envoient rien à ELK.
+
+x-elk-logging: &elk-logging
+  driver: syslog
+  options:
+    syslog-address: "udp://127.0.0.1:5140"
+    syslog-format: rfc3164
+    tag: "{{.Name}}"                 # nom du conteneur, ex. docker-haproxy-1 (sert à distinguer les sources)
+
+services:
+  webserver1:
+    logging: *elk-logging
+  webserver2:
+    logging: *elk-logging
+  haproxy:
+    logging: *elk-logging
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.14.0   # même version qu'Elasticsearch 7.14
+    command: filebeat -e --strict.perms=false
+    volumes:
+      - ./elk/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+    ports:
+      - "5140:5140/udp"             # reçoit les logs du démon Docker (qui s'adresse à 127.0.0.1:5140)
+    networks: [default, elk]        # default : réseau du compose ; elk : pour joindre elasticsearch
+
+networks:
+  elk:
+    name: docker_elk                # réseau existant de la stack ELK (créé par l'exercice 2)
+    external: true
