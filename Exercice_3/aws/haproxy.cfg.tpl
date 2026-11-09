@@ -24,11 +24,12 @@ defaults
         option  httplog
         option  dontlognull
         timeout client 10s
-        timeout connect 500ms
+        timeout connect 1s
         timeout server 10s
         timeout http-request 10s
-        timeout check 500ms
-        retries 1
+        timeout check 1s
+        timeout queue 5s
+        retries 2
         option redispatch
         errorfile 400 /etc/haproxy/errors/400.http
         errorfile 403 /etc/haproxy/errors/403.http
@@ -43,9 +44,9 @@ frontend http_in
         default_backend webservers
 
 backend webservers
-        balance roundrobin
+        balance leastconn
         option httpchk GET /
         http-check expect status 200
-        default-server check inter 500ms fastinter 250ms downinter 1s fall 2 rise 2 on-marked-down shutdown-sessions
+        default-server check inter 1s fastinter 500ms downinter 2s fall 2 rise 2 slowstart 10s maxconn 50
         server webserver1 ${web1}:80
         server webserver2 ${web2}:80
