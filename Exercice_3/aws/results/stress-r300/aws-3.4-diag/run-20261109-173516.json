@@ -1,0 +1,102 @@
+{
+  "cycles": 3,
+  "requests": 12925,
+  "ok": 12925,
+  "errors": 0,
+  "error_rate_pct": 0.0,
+  "max_latency_s": 1.16,
+  "avg_latency_s": 0.0753,
+  "p99_latency_s": 0.118,
+  "rps_actual": 300.0,
+  "detected_cycles": 3,
+  "detection_mean_s": 1.27,
+  "detection_max_s": 1.6,
+  "up_events": 3,
+  "errors_per_cycle": [
+    0,
+    0,
+    0
+  ],
+  "cycles_with_errors": 0,
+  "mon": {
+    "frontend_smax": 11,
+    "backend_smax": 10,
+    "backend_qmax": 0,
+    "backend_5xx": 0,
+    "backend_econ": 0,
+    "backend_eresp": 0,
+    "backend_wredis": 1061,
+    "backend_wretr": 0,
+    "frontend_stot": 25927,
+    "frontend_req_tot": 25927,
+    "frontend_ereq": 0,
+    "backend_cli_abrt": 0,
+    "backend_srv_abrt": 0
+  },
+  "control": {
+    "rate_target": 300,
+    "requests": 13002,
+    "errors": 0,
+    "error_rate_pct": 0.0,
+    "p99_latency_s": 0.004,
+    "max_latency_s": 0.029,
+    "errors_per_cycle": [
+      0,
+      0,
+      0
+    ]
+  },
+  "diag": {
+    "principal": {
+      "sent": 12925,
+      "connected": 12925,
+      "errors": 0,
+      "kinds": {},
+      "stalls": 0,
+      "stall_max_s": 0,
+      "send_lag_max_s": 0.0099,
+      "send_lag_p99_s": 0.009,
+      "detail": []
+    },
+    "temoin": {
+      "sent": 13002,
+      "connected": 13002,
+      "errors": 0,
+      "kinds": {},
+      "stalls": 0,
+      "stall_max_s": 0,
+      "send_lag_max_s": 0.0106,
+      "send_lag_p99_s": 0.0088,
+      "detail": []
+    },
+    "haproxy": {
+      "frontend_smax": 11,
+      "backend_smax": 10,
+      "backend_qmax": 0,
+      "backend_5xx": 0,
+      "backend_econ": 0,
+      "backend_eresp": 0,
+      "backend_wredis": 1061,
+      "backend_wretr": 0,
+      "frontend_stot": 25927,
+      "frontend_req_tot": 25927,
+      "frontend_ereq": 0,
+      "backend_cli_abrt": 0,
+      "backend_srv_abrt": 0,
+      "logs_anormaux": {},
+      "sessions_acceptees_moins_connexions_generateurs": 0
+    }
+  },
+  "scenario": "stress",
+  "target": "aws",
+  "config": "aws-3.4-diag",
+  "date": "20261109-173516",
+  "haproxy_tag": "aws",
+  "haproxy_version": "3.4.7-1ppa1~resolute",
+  "syntax": "ok",
+  "down_s": 3,
+  "up_s_between": 8,
+  "rate_target": 300,
+  "workers": 3000,
+  "clock_offset_s": 1.431
+}

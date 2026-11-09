@@ -15,7 +15,8 @@ provider "aws" {
 
 resource "aws_instance" "webserver" {
   count         = 2
-  ami           = "ami-06fb1802e2b757f09"
+  # Ubuntu 26.04 LTS, comme la VM HAProxy (même OS sur les 3 VM)
+  ami           = "ami-04bd74efcade5de13"
   instance_type = "t3.micro"
   tags = {
     Name = "OpenClassrooms-P5-Webserver-${count.index}"
@@ -34,7 +35,10 @@ resource "aws_instance" "webserver" {
 }
 
 resource "aws_instance" "haproxy" {
-  ami           = "ami-06fb1802e2b757f09"
+  # Ubuntu 26.04 LTS (eu-north-1) : seule version d'Ubuntu qui propose HAProxy 3.4 (PPA ppa:vbernat/haproxy-3.4).
+  # Ubuntu 24.04 (AMI des webservers) s'arrête à 2.8 (paquet officiel) / 3.3 (PPA, branche non-LTS).
+  # 3.4 = branche LTS (sortie 2026-06-03, supportée jusqu'à ~2031) et version testée côté docker.
+  ami           = "ami-04bd74efcade5de13"
   instance_type = "t3.micro"
   tags = {
     Name = "OpenClassrooms-P5-HAProxy"
@@ -59,7 +63,12 @@ resource "aws_instance" "haproxy" {
   provisioner "remote-exec" {
     inline = [
       "sudo apt-get update -y",
-      "sudo apt-get install -y haproxy",
+      "sudo apt-get install -y software-properties-common rsyslog",
+      "sudo add-apt-repository -y ppa:vbernat/haproxy-3.4",
+      # Ubuntu 26.04 cherche les paquets en variante amd64v3, absente du PPA (qui n'a que amd64) : on la désactive
+      "echo 'APT::Architecture-Variants \"\";' | sudo tee /etc/apt/apt.conf.d/99no-variants",
+      "sudo apt-get update -y",
+      "sudo apt-get install -y haproxy=3.4.*",
       "sudo cp /tmp/haproxy.cfg /etc/haproxy/haproxy.cfg",
       "sudo haproxy -c -f /etc/haproxy/haproxy.cfg",
       "sudo systemctl restart haproxy",
@@ -126,4 +135,13 @@ output "haproxy_ssh" {
 
 output "haproxy_http" {
   value = "Pour accéder au load-balancer:\n\thttp://${aws_instance.haproxy.public_dns}"
+}
+
+# IP publiques, lues par les scripts de test (test-stress-aws.sh)
+output "haproxy_public_ip" {
+  value = aws_instance.haproxy.public_ip
+}
+
+output "webserver_public_ips" {
+  value = aws_instance.webserver[*].public_ip
 }

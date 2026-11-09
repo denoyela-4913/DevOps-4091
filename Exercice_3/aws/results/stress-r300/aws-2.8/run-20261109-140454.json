@@ -1,0 +1,43 @@
+{
+  "cycles": 3,
+  "requests": 12923,
+  "ok": 12920,
+  "errors": 3,
+  "error_rate_pct": 0.023,
+  "max_latency_s": 3.001,
+  "avg_latency_s": 0.0891,
+  "p99_latency_s": 1.12,
+  "rps_actual": 300.0,
+  "detected_cycles": 3,
+  "detection_mean_s": 1.13,
+  "detection_max_s": 1.47,
+  "up_events": 3,
+  "errors_per_cycle": [
+    1,
+    1,
+    1
+  ],
+  "cycles_with_errors": 3,
+  "mon": {
+    "frontend_smax": 9,
+    "backend_smax": 8,
+    "backend_qmax": 0,
+    "backend_5xx": 0,
+    "backend_econ": 0,
+    "backend_eresp": 0,
+    "backend_wredis": 789,
+    "backend_wretr": 0
+  },
+  "scenario": "stress",
+  "target": "aws",
+  "config": "aws",
+  "date": "20261109-140454",
+  "haproxy_tag": "aws",
+  "haproxy_version": "2.8.30-0ubuntu0.24.04.2",
+  "syntax": "ok",
+  "down_s": 3,
+  "up_s_between": 8,
+  "rate_target": 300,
+  "workers": 3000,
+  "clock_offset_s": 1.159
+}

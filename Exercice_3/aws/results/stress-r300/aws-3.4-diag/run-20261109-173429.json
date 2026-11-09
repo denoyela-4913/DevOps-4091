@@ -1,0 +1,121 @@
+{
+  "cycles": 3,
+  "requests": 12961,
+  "ok": 12961,
+  "errors": 0,
+  "error_rate_pct": 0.0,
+  "max_latency_s": 2.177,
+  "avg_latency_s": 0.0745,
+  "p99_latency_s": 0.119,
+  "rps_actual": 300.0,
+  "detected_cycles": 3,
+  "detection_mean_s": 1.11,
+  "detection_max_s": 1.45,
+  "up_events": 3,
+  "errors_per_cycle": [
+    0,
+    0,
+    0
+  ],
+  "cycles_with_errors": 0,
+  "mon": {
+    "frontend_smax": 20,
+    "backend_smax": 18,
+    "backend_qmax": 0,
+    "backend_5xx": 1,
+    "backend_econ": 0,
+    "backend_eresp": 2,
+    "backend_wredis": 861,
+    "backend_wretr": 0,
+    "frontend_stot": 25959,
+    "frontend_req_tot": 25959,
+    "frontend_ereq": 0,
+    "backend_cli_abrt": 0,
+    "backend_srv_abrt": 0
+  },
+  "control": {
+    "rate_target": 300,
+    "requests": 12998,
+    "errors": 1,
+    "error_rate_pct": 0.008,
+    "p99_latency_s": 0.003,
+    "max_latency_s": 0.053,
+    "errors_per_cycle": [
+      0,
+      0,
+      1
+    ]
+  },
+  "diag": {
+    "principal": {
+      "sent": 12961,
+      "connected": 12961,
+      "errors": 0,
+      "kinds": {},
+      "stalls": 0,
+      "stall_max_s": 0,
+      "send_lag_max_s": 0.0104,
+      "send_lag_p99_s": 0.009,
+      "detail": []
+    },
+    "temoin": {
+      "sent": 12998,
+      "connected": 12998,
+      "errors": 1,
+      "kinds": {
+        "http_502/done": 1
+      },
+      "stalls": 0,
+      "stall_max_s": 0,
+      "send_lag_max_s": 0.0158,
+      "send_lag_p99_s": 0.0088,
+      "detail": [
+        {
+          "t": 1794242098.493,
+          "code": 502,
+          "class": "http_502",
+          "lat_s": 0.001,
+          "send_lag_s": 0.0081,
+          "phase": "done",
+          "t_conn": 0.0004,
+          "t_first": 0.0009,
+          "panne": [
+            3,
+            0.14
+          ]
+        }
+      ]
+    },
+    "haproxy": {
+      "frontend_smax": 20,
+      "backend_smax": 18,
+      "backend_qmax": 0,
+      "backend_5xx": 1,
+      "backend_econ": 0,
+      "backend_eresp": 2,
+      "backend_wredis": 861,
+      "backend_wretr": 0,
+      "frontend_stot": 25959,
+      "frontend_req_tot": 25959,
+      "frontend_ereq": 0,
+      "backend_cli_abrt": 0,
+      "backend_srv_abrt": 0,
+      "logs_anormaux": {
+        "statut 502 drapeaux SH--": 1
+      },
+      "sessions_acceptees_moins_connexions_generateurs": 0
+    }
+  },
+  "scenario": "stress",
+  "target": "aws",
+  "config": "aws-3.4-diag",
+  "date": "20261109-173429",
+  "haproxy_tag": "aws",
+  "haproxy_version": "3.4.7-1ppa1~resolute",
+  "syntax": "ok",
+  "down_s": 3,
+  "up_s_between": 8,
+  "rate_target": 300,
+  "workers": 3000,
+  "clock_offset_s": 1.430
+}
