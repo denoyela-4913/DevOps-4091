@@ -1,0 +1,18 @@
+{
+  "config": "configs/v002/haproxy.cfg",
+  "date": "20261107-100813",
+  "haproxy_tag": "2.3",
+  "haproxy_version": "2.3.21-3ce4ee0",
+  "syntax": "ok",
+  "base_servers": 2,
+  "duration_s": 15,
+  "requests": 56,
+  "ok": 56,
+  "errors": 0,
+  "last_error_s": 0.00,
+  "max_latency_s": 1.004,
+  "avg_latency_s": 0.055,
+  "detection_s": 3.38,
+  "recovery_s": 3.6,
+  "up_s": 2.66
+}

@@ -1,0 +1,14 @@
+{
+  "config": "configs/v005/haproxy.cfg",
+  "date": "20261107-000405",
+  "syntax": "ok",
+  "base_servers": 2,
+  "duration_s": 15,
+  "requests": 62,
+  "ok": 62,
+  "errors": 0,
+  "last_error_s": 0.00,
+  "max_latency_s": 1.002,
+  "avg_latency_s": 0.034,
+  "recovery_s": 7.2
+}
