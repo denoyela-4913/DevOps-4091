@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 # Moyenne les runs du scénario stress, version de HAProxy par version de HAProxy.
 #
-# Usage : tests/aggregate-stress.sh [--last N] [--dir stress-r500] [version ...]
-# Lit    : results/<version>/stress/<config>/run-*.json
-# Écrit  : results/<version>/stress/SYNTHESE.md et SYNTHESE.json (avec --last N : SYNTHESE-lastN.*)
+# Appel (depuis Exercice_3/docker/) :
+#   tests/aggregate-stress.sh [--last N] [--dir <sous-dossier>] [version ...]
+#   --last N       ne garde que les N derniers runs de chaque config   (défaut : tous)
+#   --dir <nom>    sous-dossier de results/<version>/ à traiter        (défaut : stress ; ex. stress-r500)
+#   version        ex. 3.4                                             (défaut : toutes celles qui ont ce sous-dossier)
+#   ex. : tests/aggregate-stress.sh --dir stress-r3000 3.4
+#
+# Lit    : results/<version>/<sous-dossier>/<config>/run-*.json
+# Écrit  : results/<version>/<sous-dossier>/SYNTHESE.md et SYNTHESE.json (avec --last N : SYNTHESE-lastN.*)
 
 set -u
 cd "$(cd "$(dirname "$0")/.." && pwd)" || exit 1
 
+# --- Arguments : --last N (défaut 0 = tous), --dir <sous-dossier> (défaut stress), le reste = versions ---
 LAST=0; TAGS=(); SUF=""; SD=stress
 while [ $# -gt 0 ]; do
   case $1 in --last) LAST=${2:?--last N}; shift 2 ;; --dir) SD=${2:?--dir stress-r500}; shift 2 ;; *) TAGS+=("$1"); shift ;; esac
@@ -16,8 +23,10 @@ done
 if [ ${#TAGS[@]} -eq 0 ]; then for d in results/[0-9]*/$SD/; do [ -d "$d" ] && TAGS+=("$(basename "$(dirname "$d")")"); done; fi
 [ ${#TAGS[@]} -gt 0 ] || { echo "Aucun résultat stress dans results/<version>/stress/"; exit 1; }
 
+# desc_of <config> : 1re ligne de configs/<config>/DESCRIPTION.txt (texte du tableau)
 desc_of() { if [ "$1" = main ]; then echo "Config principale (haproxy.cfg)"; else head -n1 "configs/$1/DESCRIPTION.txt" 2>/dev/null; fi; }
 
+# Programme jq appliqué aux runs d'une config : moyenne (mean), écart-type (sd), arrondi à 3 décimales (r)
 SUMMARY='
 def mean: if length==0 then null else (add/length) end;
 def sd: if length<2 then 0 else (mean as $m | ((map((.-$m)*(.-$m))|add)/(length-1))|sqrt) end;
@@ -37,6 +46,7 @@ def r: if .==null then null else (.*1000|round)/1000 end;
    cycles_err_mean:($v|map(.cycles_with_errors)|mean|r),
    up_events_mean:($v|map(.up_events)|mean|r)}'
 
+# f : affiche n/a pour une valeur absente. Boucle : une synthèse JSON puis Markdown par version.
 FMT='def f: if .==null then "n/a" else tostring end;'
 for tag in "${TAGS[@]}"; do
   base="results/$tag/$SD"; [ -d "$base" ] || { echo "Absent : $base"; continue; }
@@ -45,6 +55,7 @@ for tag in "${TAGS[@]}"; do
     [ -d "$cdir" ] || continue; cfg=$(basename "$cdir")
     files=$(ls "$cdir"run-*.json 2>/dev/null | sort); [ -n "$files" ] || continue
     [ "$LAST" -gt 0 ] && files=$(echo "$files" | tail -n "$LAST")
+    # (jq -s lit tous les fichiers comme un seul tableau ; $files volontairement sans guillemets)
     # shellcheck disable=SC2086
     jq -s --arg cfg "$cfg" --arg desc "$(desc_of "$cfg")" "$SUMMARY" $files >> "$ALL"
   done

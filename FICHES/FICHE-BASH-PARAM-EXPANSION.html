@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fiche Bash : ${var:?msg}</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    width: 210mm; height: 297mm; padding: 11mm 12mm;
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif; font-size: 10.2pt; color: #1f2937;
+    background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    display: flex; flex-direction: column; gap: 3.5mm; overflow: hidden;
+  }
+  header {
+    background: linear-gradient(120deg, #7c3aed, #ec4899 60%, #f59e0b);
+    color: #fff; border-radius: 14px; padding: 5mm 7mm;
+  }
+  header h1 { margin: 0; font-size: 21pt; letter-spacing: -.5px; }
+  header p { margin: 1mm 0 0; font-size: 10.5pt; opacity: .95; }
+  code, pre { font-family: "Fira Code", Consolas, monospace; }
+  .hero {
+    background: #111827; color: #e5e7eb; border-radius: 12px; padding: 4mm 6mm;
+    font-size: 13pt; text-align: center; font-family: Consolas, monospace;
+  }
+  .hero .k { color: #f472b6; } .hero .v { color: #34d399; } .hero .m { color: #fbbf24; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; }
+  .card { border-radius: 12px; padding: 3.5mm 4.5mm; border-left: 6px solid; }
+  .card h2 { margin: 0 0 1.5mm; font-size: 11.5pt; }
+  .card ul { margin: 0; padding-left: 4.5mm; } .card li { margin: .6mm 0; }
+  .blue { background: #eff6ff; border-color: #3b82f6; } .blue h2 { color: #1d4ed8; }
+  .green { background: #ecfdf5; border-color: #10b981; } .green h2 { color: #047857; }
+  .red { background: #fef2f2; border-color: #ef4444; } .red h2 { color: #b91c1c; }
+  .amber { background: #fffbeb; border-color: #f59e0b; } .amber h2 { color: #b45309; }
+  .c { background: #e0e7ff; color: #3730a3; padding: 0 1.5mm; border-radius: 4px; font-size: 9.5pt; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; border-radius: 10px; overflow: hidden; }
+  th { background: #7c3aed; color: #fff; padding: 1.6mm 2.5mm; text-align: left; }
+  td { padding: 1.4mm 2.5mm; border-bottom: 1px solid #e5e7eb; }
+  tr:nth-child(even) td { background: #f5f3ff; }
+  .ok { color: #059669; font-weight: 700; } .ko { color: #dc2626; font-weight: 700; }
+  pre { margin: 0; background: #111827; color: #e5e7eb; border-radius: 10px; padding: 3mm 4mm; font-size: 8.8pt; line-height: 1.45; }
+  pre .cm { color: #9ca3af; } pre .g { color: #34d399; } pre .r { color: #f87171; }
+  .tip { background: #fdf4ff; border: 2px dashed #c026d3; border-radius: 12px; padding: 3mm 5mm; color: #86198f; }
+  footer { margin-top: auto; text-align: center; font-size: 8.5pt; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛡️ Bash : <code style="background:rgba(255,255,255,.2);padding:0 2mm;border-radius:6px">${N:?message}</code></h1>
+  <p>Exiger un argument obligatoire en une seule ligne, sans <code>if</code>.</p>
+</header>
+
+<div class="hero">
+  <span class="m">SD=</span>${<span class="k">2</span><span class="m">:?</span><span class="v">--dir stress-r500</span>}
+</div>
+
+<div class="grid">
+  <div class="card blue">
+    <h2>🔍 Décortiquons</h2>
+    <ul>
+      <li><code class="c">SD=</code> affecte le résultat à la variable <b>SD</b></li>
+      <li><code class="c">$2</code> 2ᵉ argument du script</li>
+      <li><code class="c">:?</code> « erreur si absent ou vide »</li>
+      <li><code class="c">--dir stress-r500</code> simple <b>texte d'aide</b>, jamais interprété</li>
+    </ul>
+  </div>
+  <div class="card green">
+    <h2>⚙️ Ce qui se passe</h2>
+    <ul>
+      <li>✅ <code>$2</code> a une valeur → elle est utilisée</li>
+      <li>💥 <code>$2</code> absent/vide → message sur <b>stderr</b></li>
+      <li>🛑 Le script <b>s'arrête</b> (code de sortie ≠ 0)</li>
+      <li>Format : <code>script: ligne N: 2: message</code></li>
+    </ul>
+  </div>
+</div>
+
+<table>
+  <tr><th>Forme</th><th>Rôle</th><th>$2 non défini</th><th>$2 = "" (vide)</th><th>$2 = "abc"</th></tr>
+  <tr><td><code>${2:?msg}</code></td><td>Erreur si absent <b>ou vide</b></td><td class="ko">❌ erreur</td><td class="ko">❌ erreur</td><td class="ok">✅ abc</td></tr>
+  <tr><td><code>${2?msg}</code></td><td>Erreur si absent seulement</td><td class="ko">❌ erreur</td><td class="ok">✅ (vide)</td><td class="ok">✅ abc</td></tr>
+  <tr><td><code>${2:-def}</code></td><td>Valeur par défaut</td><td class="ok">def</td><td class="ok">def</td><td class="ok">abc</td></tr>
+  <tr><td><code>${2:=def}</code></td><td>Défaut + affecte la variable</td><td class="ok">def</td><td class="ok">def</td><td class="ok">abc</td></tr>
+</table>
+
+<pre><span class="cm">#!/bin/bash</span>
+SD=${2:?--dir stress-r500}
+echo "SD=$SD"
+
+<span class="cm">$ ./t.sh --dir stress-r500</span>
+<span class="g">SD=stress-r500</span>                      <span class="cm"># ✅ OK</span>
+<span class="cm">$ ./t.sh --dir ""</span>
+<span class="r">./t.sh: line 2: 2: --dir stress-r500</span>   <span class="cm"># 💥 vide refusé avec ":?"</span>
+<span class="cm">$ ./t.sh --dir</span>
+<span class="r">./t.sh: line 2: 2: --dir stress-r500</span>   <span class="cm"># 💥 absent</span></pre>
+
+<div class="grid">
+  <div class="card amber">
+    <h2>💡 Quand l'utiliser ?</h2>
+    <ul>
+      <li>Valider un argument obligatoire <b>en 1 ligne</b></li>
+      <li>Protéger <code>rm -rf "${DIR:?}/"</code> d'une variable vide</li>
+      <li>Exiger une variable d'env : <code>${API_KEY:?manquante}</code></li>
+    </ul>
+  </div>
+  <div class="card red">
+    <h2>⚠️ Pièges</h2>
+    <ul>
+      <li>Le message ne sert qu'<b>d'indice d'usage</b>, pas de vrai <code>--help</code></li>
+      <li>Dans un script <b>non interactif</b>, le shell quitte ; en terminal, seule la commande échoue</li>
+      <li>Penser aux guillemets : <code>"${2:?}"</code></li>
+    </ul>
+  </div>
+</div>
+
+<div class="tip">
+  🎯 <b>À retenir :</b> <code>${N:?msg}</code> = « donne-moi l'argument N, sinon j'affiche <i>msg</i> et je m'arrête ». Avec les <b>deux-points</b>, une valeur vide compte comme absente.
+</div>
+
+<footer>Fiche mémo Bash · expansion de paramètres · projet DevOps 4091</footer>
+</body>
+</html>

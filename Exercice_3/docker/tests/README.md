@@ -102,6 +102,10 @@ tests/mon-table.sh 3.4      # tableau comparatif charge x config avec les indica
   - **hôte** : CPU global, mémoire disponible, sockets TCP, CPU et threads/fd du générateur de charge. Résumé dans le champ `mon` du JSON, série complète dans `run-<date>.mon.tsv`.
 - `GEN=container` : le générateur tourne dans des conteneurs `python:3-slim` sur le réseau Docker du test. **À utiliser dès 500 req/s** : depuis l'hôte, le port publié (`docker-proxy`) perd des connexions (5 % d'erreurs à 500 req/s, 24 % à 750 req/s alors que HAProxy était quasi inactif). Ces mesures invalides sont conservées dans `results/_invalide-docker-proxy-3.4/`. Le CPU du générateur n'est pas relevé dans ce mode : contrôler que `rps_actual` reste proche de la cible.
 - Un processus générateur par tranche de 250 req/s (un seul sature un cœur vers 300 req/s).
+- `LOADGEN=async` (automatique avec `--rate` ≥ 1000) : `tests/loadgen_async.py`, générateur asyncio en boucle ouverte, un processus par 1500 req/s ; `WORKERS` y sert de garde-fou (requêtes en vol, code -1 si dépassé). Le CPU des conteneurs générateurs est relevé dans `d_gen_cpu` (`max_gen_cpu_pct` du résumé).
+- `tests/check-round.py [--strict] <version> [charges…]` : tableau par charge × config avec verdict (débit < 97 % de la cible, CPU hôte > 88 %, mémoire libre < 1,5 Go). Avec `--strict`, code retour 2 si problème. Utilisé entre deux tranches de runs d'une campagne.
+- Campagne par tranches : lancer `run-all-tests.sh` avec 6, 6 puis 5 runs (les runs s'ajoutent), vérifier avec `check-round.py` après chaque tranche, ajuster si besoin.
+- Bilan complet des campagnes de charge : `results/ANALYSE-STRESS.md`.
 
 ## Limites
 

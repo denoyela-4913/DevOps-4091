@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# Moyenne les runs de chaque config, version de HAProxy par version de HAProxy.
+# Moyenne les runs du scénario « bascule » de chaque config, version de HAProxy par version de HAProxy.
 #
-# Usage : tests/aggregate.sh [--last N] [version ...]
-#   sans version : toutes celles de results/ (dossiers dont le nom commence par un chiffre)
-#   --last N     : ne garde que les N derniers runs de chaque config
+# Appel (depuis Exercice_3/docker/) :
+#   tests/aggregate.sh [--last N] [version ...]
+#   --last N   ne garde que les N derniers runs de chaque config        (défaut : tous)
+#   version    dossier(s) results/<version> à traiter, ex. 2.3 3.4      (défaut : toutes, dossiers commençant par un chiffre)
+#   ex. : tests/aggregate.sh --last 3 2.3
 #
 # Lit    : results/<version>/<config>/run-*.json
 # Écrit  : results/<version>/SYNTHESE.md et SYNTHESE.json (avec --last N : SYNTHESE-lastN.*)
-#          results/COMPARATIF-VERSIONS$SUF.md (même config, versions côte à côte)
+#          results/COMPARATIF-VERSIONS[-lastN].md (même config, versions côte à côte)
 
 set -u
 cd "$(cd "$(dirname "$0")/.." && pwd)" || exit 1
 
+# --- Arguments : --last N (défaut 0 = tous les runs) ; le reste = versions de HAProxy à traiter ---
 LAST=0; TAGS=()
 SUF=""
 while [ $# -gt 0 ]; do
@@ -21,8 +24,11 @@ done
 if [ ${#TAGS[@]} -eq 0 ]; then for d in results/[0-9]*/; do [ -d "$d" ] && TAGS+=("$(basename "$d")"); done; fi
 [ ${#TAGS[@]} -gt 0 ] || { echo "Aucun résultat dans results/<version>/"; exit 1; }
 
+# desc_of <config> : 1re ligne de configs/<config>/DESCRIPTION.txt (texte du tableau)
 desc_of() { if [ "$1" = main ]; then echo "Config principale (haproxy.cfg)"; else head -n1 "configs/$1/DESCRIPTION.txt" 2>/dev/null; fi; }
 
+# Programme jq appliqué à tous les runs d'une config : moyenne (mean), écart-type (sd), arrondi à 3 décimales (r).
+# Les runs à syntaxe invalide sont comptés à part (invalid) ; -1 = valeur « jamais » exclue des moyennes.
 SUMMARY='
 def mean: if length==0 then null else (add/length) end;
 def sd: if length<2 then 0 else (mean as $m | ((map((.-$m)*(.-$m))|add)/(length-1))|sqrt) end;
@@ -42,6 +48,7 @@ def r: if .==null then null else (.*1000|round)/1000 end;
    rec_mean:($rec|mean|r),rec_missed:(($v|length)-($rec|length)),
    up_mean:($up|mean|r)}'
 
+# 1. Une synthèse JSON par (version, config), accumulée dans un fichier temporaire
 ALL=$(mktemp); trap 'rm -f "$ALL"' EXIT
 for tag in "${TAGS[@]}"; do
   [ -d "results/$tag" ] || { echo "Version absente : results/$tag"; continue; }
@@ -49,11 +56,13 @@ for tag in "${TAGS[@]}"; do
     [ -d "$cdir" ] || continue; cfg=$(basename "$cdir")
     files=$(ls "$cdir"run-*.json 2>/dev/null | sort); [ -n "$files" ] || continue
     [ "$LAST" -gt 0 ] && files=$(echo "$files" | tail -n "$LAST")
+    # (jq -s lit tous les fichiers comme un seul tableau ; $files volontairement sans guillemets)
     # shellcheck disable=SC2086
     jq -s --arg tag "$tag" --arg cfg "$cfg" --arg desc "$(desc_of "$cfg")" "$SUMMARY" $files >> "$ALL"
   done
 done
 
+# 2. Une synthèse Markdown par version (f : affiche n/a pour une valeur absente)
 FMT='def f: if .==null then "n/a" else tostring end;'
 for tag in "${TAGS[@]}"; do
   [ -d "results/$tag" ] || continue
@@ -75,7 +84,7 @@ for tag in "${TAGS[@]}"; do
   echo "Synthèse : results/$tag/SYNTHESE$SUF.md"
 done
 
-# Comparatif entre versions (même config, versions côte à côte)
+# 3. Comparatif entre versions (même config, versions côte à côte) ; group_by(.cfg) regroupe par config
 jq -s '.' "$ALL" > "$ALL.json"
 VERS=$(jq -r '[.[].tag]|unique|sort|.[]' "$ALL.json" | paste -sd' ')
 {

@@ -2,7 +2,7 @@
 
 ## Convention
 
-- `haproxy.cfg` (à la racine de `docker/`) est la **config principale** : la plus optimisée. C'est celle que monte `docker-compose.yml`.
+- `haproxy.cfg` (à la racine de `docker/`) est la **config principale** : actuellement **identique à v006** (la meilleure mesurée, voir `results/ANALYSE-STRESS.md`). C'est celle que monte `docker-compose.yml`.
 - Chaque autre config est conservée dans `configs/vNNN/` (`v001`, `v002`, ...). On n'écrase jamais une version : on en crée une nouvelle.
 - Quand une version devient la meilleure, on la copie vers `haproxy.cfg`.
 - Les **résultats ne sont plus dans ce dossier** : ils sont rangés par version de HAProxy testée dans `results/<version>/<config>/` (voir `tests/README.md`).

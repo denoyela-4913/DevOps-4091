@@ -2,18 +2,29 @@
 # Test reproductible de bascule : mesure ce que voit un utilisateur quand webserver1 tombe,
 # et quand HAProxy s'en aperçoit réellement.
 #
-# Usage : tests/test-failover.sh <fichier_haproxy.cfg> <dossier_resultats>
-# Variables facultatives :
-#   HAPROXY_VERSION  tag de l'image haproxy (défaut 2.3)
-#   PORT (18080) · DURATION (15 s) · RECOVERY_MAX (30 s) · SKIP_SYNTAX=1
+# Ce que fait le script : démarre un HAProxy temporaire avec la config testée (port à part),
+# arrête webserver1 pendant DURATION s en envoyant des requêtes en continu, lit les logs pour
+# dater la détection, puis redémarre webserver1 et mesure le retour à 2 serveurs.
+# Le HAProxy principal (port 8080) n'est pas touché, mais webserver1 est arrêté puis redémarré.
 #
-# Le test démarre un HAProxy temporaire avec la config testée, sur un port à part.
-# Le HAProxy principal (port 8080) n'est pas touché. En revanche webserver1 est
-# arrêté puis redémarré, ce qui peut perturber brièvement la stack principale.
+# Appel (depuis Exercice_3/docker/) :
+#   [VARIABLES=valeur ...] tests/test-failover.sh <fichier_haproxy.cfg> <dossier_resultats>
+#   ex. : HAPROXY_VERSION=3.4 tests/test-failover.sh configs/v002/haproxy.cfg results/3.4/v002
+# (d'ordinaire appelé par run-all-tests.sh)
 #
-# Sortie : <dossier_resultats>/run-<date>.json
+# Arguments : 1 = config à tester (obligatoire) ; 2 = dossier des résultats (obligatoire)
+# Variables d'environnement (valeur par défaut entre parenthèses) :
+#   HAPROXY_VERSION (2.3)  tag de l'image haproxy
+#   PORT (18080)           port publié du HAProxy de test
+#   DURATION (15)          secondes de panne avec requêtes en continu
+#   RECOVERY_MAX (30)      secondes maximum d'attente du retour des 2 serveurs
+#   SKIP_SYNTAX (0)        1 = ne pas vérifier la syntaxe de la config
+#
+# Sortie : <dossier_resultats>/run-<date>.json. Code retour 1 si la config est invalide ou si
+# HAProxy ne démarre pas.
 
-set -u
+set -u   # une variable non définie est une erreur
+# --- Arguments et paramètres (${VAR:-x} = valeur de VAR, sinon x ; ${1:?msg} = obligatoire) ---
 CFG_IN=${1:?usage: test-failover.sh <haproxy.cfg> <dossier_resultats>}
 OUT=${2:?usage: test-failover.sh <haproxy.cfg> <dossier_resultats>}
 export HAPROXY_VERSION=${HAPROXY_VERSION:-2.3}
@@ -22,6 +33,7 @@ DURATION=${DURATION:-15}
 RECOVERY_MAX=${RECOVERY_MAX:-30}
 SKIP_SYNTAX=${SKIP_SYNTAX:-0}
 
+# Chemins : tout est ramené en absolu, puis on travaille depuis docker/ (là où est docker-compose.yml)
 DOCKER_DIR=$(cd "$(dirname "$0")/.." && pwd)
 CFG=$(realpath "$CFG_IN")
 mkdir -p "$OUT"; OUT=$(realpath "$OUT")
@@ -34,19 +46,25 @@ URL="http://localhost:$PORT"
 MNT="$CFG:/usr/local/etc/haproxy/haproxy.cfg"
 HAP_EXACT="$HAPROXY_VERSION"
 
+# now : heure actuelle en secondes (epoch, avec décimales)
 now() { date +%s.%N; }
+# server_name : nom du webserver qui a répondu (extrait de la page HTML par grep/sed)
 server_name() { curl -s --max-time 3 "$URL" | grep -o 'Server&nbsp;name:</span> <span>[a-z0-9]*' | sed 's/.*<span>//'; }
 
+# log_delay <DOWN|UP> <epoch> :
 # Premier message "webserver1 is <ETAT>" de HAProxy dont l'heure est >= $2 (epoch). Affiche l'écart en secondes, ou -1.
 log_delay() {
   local state=$1 ref=$2 ts ep
   while read -r ts; do
     ep=$(date -d "$ts" +%s.%N 2>/dev/null) || continue
+    # awk sert de comparateur de nombres décimaux (bash ne sait faire que des entiers)
     if awk -v a="$ep" -v b="$ref" 'BEGIN{exit !(a>=b)}'; then awk -v a="$ep" -v b="$ref" 'BEGIN{printf "%.2f", a-b}'; return; fi
+  # `done < <(commande)` : lit la sortie de la commande ligne par ligne, sans sous-shell
   done < <(docker logs --timestamps "$NAME" 2>&1 | grep "webserver1 is $state" | awk '{print $1}')
   echo -1
 }
 
+# Nettoyage garanti à la sortie (même sur erreur ou Ctrl-C, grâce à `trap ... EXIT`)
 cleanup() {
   docker stop "$NAME" >/dev/null 2>&1
   docker container rm "$NAME" >/dev/null 2>&1
@@ -55,6 +73,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# write_result <ok|invalid> : écrit le JSON du run avec jq (--argjson = nombre ; ${X:-0} = 0 si X est vide)
 write_result() { # $1=syntaxe
   jq -n \
     --arg config "$CFG_IN" --arg date "$STAMP" --arg syntax "$1" \
@@ -95,7 +114,8 @@ v=$(docker exec "$NAME" haproxy -v 2>/dev/null | head -1 | sed -n 's/^HA-\?Proxy
 BASE_SERVERS=$(for _ in $(seq 1 10); do server_name; done | sort -u | grep -c .)
 echo "   répartition initiale : $BASE_SERVERS serveur(s) distinct(s) sur 10 requêtes"
 
-# 4. Panne de webserver1 pendant DURATION secondes, requêtes en continu
+# 4. Panne de webserver1 pendant DURATION secondes, requêtes en continu (une toutes les 0,2 s).
+# Chaque ligne du fichier : "secondes_depuis_t0 code_http durée" (curl -w).
 : > "$TMP.req"
 t0=$(now)
 docker compose stop -t 0 webserver1 >/dev/null 2>&1 &
@@ -106,6 +126,7 @@ while :; do
   sleep 0.2
 done
 wait
+# awk compte requêtes, succès (code 200), erreurs, heure de la dernière erreur, latence max et moyenne
 read -r REQUESTS OK ERRORS LAST_ERROR MAX_LAT AVG_LAT < <(awk '
   { n++; if ($2==200) { ok++; s+=$3 } else { err++; last=$1 } if ($3>m) m=$3 }
   END { printf "%d %d %d %.2f %.3f %.3f\n", n, ok, err, last, m, (ok? s/ok : 0) }' "$TMP.req")
