@@ -1,28 +1,27 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
+# Fichier main.tf en UTF-8 (accents autorisés)
+
+# Partition AWS du compte courant ('aws' en règle générale ; d'autres existent,
+# ex. 'aws-eusc' pour la région eusc-de-east-1, 'aws-cn', 'aws-us-gov').
+# On passe par une data source + un local (et non une variable) car elle est
+# calculée dynamiquement. Voir https://aws.amazon.com/fr/about-aws/global-infrastructure/
+data "aws_partition" "current" {}
+
+locals {
+  partition = data.aws_partition.current.partition
 }
 
-provider "aws" {
-  ##region = "us-east-1"
-  region = "eu-north-1"
-}
-
-resource "aws_opensearch_domain" "openclassrooms-p8" {
-  domain_name    = "openclassrooms-p5-edo"
-  engine_version = "Elasticsearch_7.10"
+resource "aws_opensearch_domain" "opensearch" {
+  domain_name    = var.domain_name
+  engine_version = var.engine_version
 
   cluster_config {
-    instance_type = "t3.small.search"
+    instance_type = var.instance_type
   }
 
   ebs_options {
     ebs_enabled = true
-    volume_size = 10
+    volume_size = var.ebs_volume_size
+    volume_type = var.ebs_volume_type
   }
 
   access_policies = jsonencode({
@@ -31,22 +30,8 @@ resource "aws_opensearch_domain" "openclassrooms-p8" {
       Effect    = "Allow"
       Principal = { AWS = "*" }
       Action    = "es:*"
-      Resource  = "arn:aws:es:eu-north-1:*:domain/openclassrooms-p5-edo/*"
-      Condition = { IpAddress = { "aws:SourceIp" = "88.160.138.154/32" } }
+      Resource  = "arn:${local.partition}:es:${var.aws_region}:*:domain/${var.domain_name}/*"
+      Condition = { IpAddress = { "aws:SourceIp" = var.allowed_source_cidrs } }
     }]
   })
-
-  tags = {
-    Domain = "OpenClassrooms_P5_EDO"
-  }
-}
-
-output "elasticsearch" {
-  description = "URL de la base de données ElasticSearch"
-  value       = aws_opensearch_domain.openclassrooms-p8.endpoint
-}
-
-output "kibana" {
-  description = "URL de connexion à l'instance Kibana"
-  value       = aws_opensearch_domain.openclassrooms-p8.dashboard_endpoint
 }
