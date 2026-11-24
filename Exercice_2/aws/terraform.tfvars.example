@@ -1,0 +1,16 @@
+# Copier en terraform.tfvars (ignoré par git) puis adapter.
+
+# OBLIGATOIRE : votre IP publique (ex. curl https://checkip.amazonaws.com)
+allowed_source_cidrs = ["203.0.113.10/32"]
+
+# Valeurs par défaut (voir variables.tf)
+aws_region      = "eu-north-1"
+domain_name     = "openclassrooms-p5-edo"
+engine_version  = "Elasticsearch_7.10"
+instance_type   = "t3.small.search"
+ebs_volume_size = 10
+ebs_volume_type = "gp3"
+
+tags = {
+  Domain = "OpenClassrooms_P5_EDO"
+}

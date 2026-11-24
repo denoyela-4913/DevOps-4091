@@ -4,3 +4,5 @@
 Exercice_*/*/tfplan
 Exercice_*/*/*/tfplan
 *sensitive*
+*.tfvars
+!*.tfvars.example

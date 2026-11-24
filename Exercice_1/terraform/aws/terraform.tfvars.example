@@ -1,0 +1,17 @@
+# Copier en terraform.tfvars puis adapter. Toutes les valeurs ci-dessous
+# sont les valeurs par défaut (voir variables.tf).
+
+aws_region    = "eu-north-1"
+ami_id        = "ami-06fb1802e2b757f09" # Ubuntu 24.04 LTS, eu-north-1
+instance_type = "t3.micro"
+instance_name = "OpenClassrooms-EDO-P5"
+
+security_group_name      = "allow-ssh"
+allowed_ssh_cidr_blocks  = ["0.0.0.0/0"] # recommandé : ["<votre-ip>/32"]
+allowed_http_cidr_blocks = ["0.0.0.0/0"]
+
+generated_key_name        = "openclassrooms_edo_p5"
+ssh_rsa_bits              = 4096
+ssh_private_key_directory = "~/.ssh"
+
+tags = {}
